@@ -72,6 +72,9 @@ public:
         A[0] = dauMoi;
     }
 };
+HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+void setMau(int mau) { SetConsoleTextAttribute(hConsole, mau); }
+void resetMau()      { SetConsoleTextAttribute(hConsole, 7);   }
 
 vector<Point> ToaDoChuongNgaiVatL() {
     vector<Point> tuong;
@@ -116,11 +119,15 @@ public:
 
     void Ve_MoiDB_ChuongNgaiVat_L() {
         if (moiDB.ChuaBiAn) {
+            setMau(13);
             gotoxy(20, 10); cout << "$";
+            resetMau();
             vector<Point> tuong = ToaDoChuongNgaiVatL();
+            setMau(11);
             for (int i = 0; i < (int)tuong.size(); i++) {
                 gotoxy(tuong[i].x, tuong[i].y); cout << "*";
             }
+            resetMau();
         }
     }
 
@@ -199,6 +206,7 @@ private:
         mNhanhCham.thoiDiemSpawn = clock();
         
         gotoxy(mNhanhCham.vitri.x, mNhanhCham.vitri.y);
+        
         cout << (mNhanhCham.loai == NHANH ? "F" : "S");
         thongBao = (mNhanhCham.loai == NHANH) ? "MOI NHANH(F): Tang toc! An S de giai." : "MOI CHAM(S): Giam toc! An F de giai.";
     }
