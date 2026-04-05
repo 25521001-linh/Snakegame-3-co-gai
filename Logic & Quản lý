@@ -1,0 +1,228 @@
+//LOGIC XỬ LÝ GAME
+class CONRAN {
+public:
+    vector<Point> A;
+    int DoDai;
+    Point tail_old;
+
+    CONRAN() {
+        DoDai = 3;
+        Point p1 = {5, 10}; A.push_back(p1);
+        Point p2 = {4, 10}; A.push_back(p2);
+        Point p3 = {3, 10}; A.push_back(p3);
+    }
+
+    void Ve() {
+        for (int i = 0; i < (int)A.size(); i++) {
+            gotoxy(A[i].x, A[i].y);
+            if (i == 0) cout << "O"; else cout << "x";
+        }
+    }
+
+    void XoaDuoi() {
+        gotoxy(tail_old.x, tail_old.y);
+        cout << " ";
+    }
+
+//LOGIC CHỈNH SỬA Ở PHẦN NÀY
+    void DiChuyen(int Huong) {
+    	tail_old = A[A.size() - 1];
+    	Point dauMoi = A[0];
+
+    	if (Huong == 0) dauMoi.x++;
+    	if (Huong == 1) dauMoi.y++;
+    	if (Huong == 2) dauMoi.x--;
+    	if (Huong == 3) dauMoi.y--;
+
+    	if (dauMoi.x >= MAP_WIDTH) dauMoi.x = 0;
+    	else if (dauMoi.x < 0) dauMoi.x = MAP_WIDTH - 1;
+    	if (dauMoi.y >= MAP_HEIGHT) dauMoi.y = 0;
+    	else if (dauMoi.y < 0) dauMoi.y = MAP_HEIGHT - 1;
+
+    	for (int i = (int)A.size() - 1; i > 0; i--) A[i] = A[i - 1];
+    	A[0] = dauMoi;
+	}
+};
+
+vector<Point> ToaDoChuongNgaiVatL() {
+    vector<Point> tuong;
+    for (int i = 15; i <= 25; i++) {
+        Point p = {i, 9};
+        tuong.push_back(p);
+    }
+    for (int i = 15; i <= 25; i++) {
+        Point p = {i, 11};
+        tuong.push_back(p);
+    }
+    return tuong;
+}
+
+//QUẢN LÝ - ĐIỀU PHỐI
+class QuanLyGame {
+public:
+    ConMoi moiThuong;
+    ConMoi moiDB;
+
+    QuanLyGame() {
+        moiThuong.ChuaBiAn = false;
+        moiDB.ChuaBiAn = false;
+    }
+
+    void xuatHienMoiThuong(CONRAN &r) {
+        bool hopLe;
+        vector<Point> tuong = ToaDoChuongNgaiVatL();
+        do {
+            hopLe = true;
+            moiThuong.vitri.x = rand() % MAP_WIDTH;
+            moiThuong.vitri.y = rand() % MAP_HEIGHT;
+            for (int i = 0; i < (int)r.A.size(); i++) {
+                if (moiThuong.vitri.x == r.A[i].x && moiThuong.vitri.y == r.A[i].y) {
+                    hopLe = false; break;
+                }
+            }
+            if (hopLe) {
+                for (int i = 0; i < (int)tuong.size(); i++) {
+                    if (moiThuong.vitri.x == tuong[i].x && moiThuong.vitri.y == tuong[i].y) {
+                        hopLe = false; break;
+                    }
+                }
+            }
+            if (hopLe) {
+                if (moiThuong.vitri.x >= 15 && moiThuong.vitri.x <= 25 &&
+                    moiThuong.vitri.y >= 9  && moiThuong.vitri.y <= 11) {
+                    hopLe = false;
+                }
+            }
+        } while (!hopLe);
+        moiThuong.ChuaBiAn = true;
+        moiThuong.TimeXuathien = clock();
+        gotoxy(moiThuong.vitri.x, moiThuong.vitri.y); cout << "P";
+    }
+
+    void xuatHienMoiDB(CONRAN &r) {
+        moiDB.vitri.x = 20;
+        moiDB.vitri.y = 10;
+        moiDB.ChuaBiAn = true;
+        moiDB.TimeXuathien = clock();
+    }
+
+    void Ve_MoiDB_ChuongNgaiVat_L() {
+        if (moiDB.ChuaBiAn) {
+            gotoxy(20, 10); cout << "$";
+            vector<Point> tuong = ToaDoChuongNgaiVatL();
+            for (int i = 0; i < (int)tuong.size(); i++) {
+                gotoxy(tuong[i].x, tuong[i].y); cout << "*";
+            }
+        }
+    }
+
+    void XoaTuongL_MoiDB() {
+        vector<Point> tuong = ToaDoChuongNgaiVatL();
+        for (int i = 0; i < (int)tuong.size(); i++) {
+            gotoxy(tuong[i].x, tuong[i].y); cout << " ";
+        }
+        gotoxy(20, 10); cout << " ";
+        moiDB.ChuaBiAn = false;
+    }
+
+    bool KiemTraThua(CONRAN &r) {
+        for (int i = 1; i < (int)r.A.size(); i++) {
+            if (r.A[0].x == r.A[i].x && r.A[0].y == r.A[i].y) return true;
+        }
+        return false;
+    }
+
+    void tinhdiem(CONRAN &r) {
+        if (r.A[0].x == moiThuong.vitri.x && r.A[0].y == moiThuong.vitri.y) {
+            diem++;
+            r.A.push_back(r.tail_old);
+            if (tocDo > 30) tocDo -= 0.7f;
+            xuatHienMoiThuong(r);
+            if (diem % 5 == 0) xuatHienMoiDB(r);
+        }
+        if (moiDB.ChuaBiAn && r.A[0].x == 20 && r.A[0].y == 10) {
+            diem += 5;
+            for (int i = 0; i < 5; i++) {
+                r.A.push_back(r.tail_old);
+            }
+            XoaTuongL_MoiDB();
+        }
+    }
+
+    void kiemTraThoiGian(CONRAN &r) {
+        if (moiThuong.ChuaBiAn && (clock() - moiThuong.TimeXuathien) / CLOCKS_PER_SEC >= 15) {
+            gotoxy(moiThuong.vitri.x, moiThuong.vitri.y); cout << " ";
+            xuatHienMoiThuong(r);
+        }
+        if (moiDB.ChuaBiAn && (clock() - moiDB.TimeXuathien) / CLOCKS_PER_SEC >= 25) XoaTuongL_MoiDB();
+    }
+};
+
+//UPDATE: QUẢN LÝ ĐIỀU PHỐI TRONG HÀM MAIN
+int main() {
+    srand((unsigned int)time(NULL));
+    CONSOLE_CURSOR_INFO cursorInfo;
+    cursorInfo.dwSize = 100;
+    cursorInfo.bVisible = FALSE;
+    SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursorInfo);
+
+    system("cls");
+    gotoxy(10, 9);  cout << "==============================";
+    gotoxy(10, 10); cout << "   SNAKE GAME - Nhan phim bat ky!";
+    gotoxy(10, 11); cout << "   WASD hoac mui ten de dieu khien";
+    gotoxy(10, 12); cout << "==============================";
+    getch();
+    system("cls");
+
+    CONRAN r;
+    QuanLyGame ql;
+    int Huong = 0;
+    int HuongThucTe = 0; //Tránh con rắn bị quay đầu nhanh
+    ql.xuatHienMoiThuong(r);
+
+//CÓ CHỈNH SỬA Ở ĐÂY
+    while (true) {
+        clock_t frameStart = clock();
+
+        if (kbhit()) {
+            char t = getch();
+            //CHỈ ĐỔI HƯỚNG DỰ KIẾN CHỨ CHƯA ĐỔI HƯỚNG THỰC TẾ NGAY
+            if ((t == 'a' || t == 75) && HuongThucTe != 0) Huong = 2;
+            if ((t == 'd' || t == 77) && HuongThucTe != 2) Huong = 0;
+            if ((t == 'w' || t == 72) && HuongThucTe != 1) Huong = 3;
+            if ((t == 's' || t == 80) && HuongThucTe != 3) Huong = 1;
+        }
+
+        r.XoaDuoi();
+        HuongThucTe = Huong; //HƯỚNG SẼ GIỚI HẠN ĐI TRONG KHUNG HÌNH
+        r.DiChuyen(HuongThucTe);
+
+        //QUẢN LÝ VA CHẠM TƯỜNG L
+        if (ql.moiDB.ChuaBiAn) {
+            vector<Point> tuong = ToaDoChuongNgaiVatL();
+            for (int i = 0; i < (int)tuong.size(); i++) {
+                if (r.A[0].x == tuong[i].x && r.A[0].y == tuong[i].y) goto lose;
+            }
+        }
+
+        if (ql.KiemTraThua(r)) break;
+
+        ql.tinhdiem(r);
+        ql.kiemTraThoiGian(r);
+
+        ql.Ve_MoiDB_ChuongNgaiVat_L();
+        r.Ve();
+
+        gotoxy(0, MAP_HEIGHT + 1);
+        cout << "Diem: " << diem << " | Toc do: " << (int)tocDo << "ms   ";
+
+        int elapsed = (int)((clock() - frameStart) * 1000 / CLOCKS_PER_SEC);
+        int sleepTime = (int)tocDo - elapsed;
+        if (sleepTime > 0) Sleep(sleepTime);
+    }
+	lose: 
+    system("cls");
+    cout << "GAME OVER! Diem: " << diem << endl;
+    system("pause");
+    return 0;
+}
