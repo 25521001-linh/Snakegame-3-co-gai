@@ -14,7 +14,6 @@ using namespace std;
 #define UI_LEFT    (MAP_WIDTH*2 + 4 + 2)
 #define UI_W       21
 
-// Khai báo extern — các biến này được định nghĩa trong main.cpp
 extern int diem;
 extern int bestScore;
 
@@ -35,25 +34,20 @@ public:
         system("mode con cols=115 lines=27");
     }
 
-    // Bảng màu:
-    // 8=DarkGray, 10=Green, 11=LightCyan, 12=Red, 14=Yellow, 15=White
     static void SetMau(int mau) {
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), mau);
     }
 
-    // Tọa độ ô LOGIC → cột màn hình = x*2+2, hàng = y+2
     static void ToaDo(int x, int y) {
         COORD c = { (SHORT)(x * 2 + 2), (SHORT)(y + 2) };
         SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), c);
     }
 
-    // Tọa độ TUYỆT ĐỐI (dùng cho UI panel)
     static void ToaDoUI(int x, int y) {
         COORD c = { (SHORT)x, (SHORT)y };
         SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), c);
     }
 
-    // Vẽ hộp viền double-line
     static void VeHop(int x, int y, int w, int h, int mau) {
         SetMau(mau);
         ToaDoUI(x, y);          cout << char(201);
@@ -70,31 +64,24 @@ public:
         }
     }
 
-    // Vẽ toàn bộ khung tĩnh (chỉ gọi 1 lần khi bắt đầu/restart)
     static void VeKhungTinh() {
-        // Khung game
         VeHop(0, 0, MAP_WIDTH * 2 + 2, MAP_HEIGHT + 2, 10);
 
         int px = UI_LEFT - 2;
         int pw = UI_W + 1;
 
-        // [ SCORE ]
         VeHop(px, 0, pw, 3, 10);
         SetMau(8); ToaDoUI(px+2, 1); cout << "SCORE";
 
-        // [ BEST ]
         VeHop(px, 4, pw, 3, 10);
         SetMau(8); ToaDoUI(px+2, 5); cout << "BEST";
 
-        // [ MOI THUONG ]
         VeHop(px, 8, pw, 4, 10);
         SetMau(8); ToaDoUI(px+2, 9); cout << "MOI THUONG";
 
-        // [ LICH SU ]
         VeHop(px, 13, pw, 4, 10);
         SetMau(8); ToaDoUI(px+2, 14); cout << "LICH SU";
 
-        // [ CONTROLS ]
         VeHop(px, 18, pw, 5, 10);
         SetMau(11); ToaDoUI(px+2, 19); cout << "CONTROLS";
         SetMau(8);
@@ -103,21 +90,20 @@ public:
         ToaDoUI(px+2, 22); cout << "A/< : Trai";
         ToaDoUI(px+2, 23); cout << "D/> : Phai";
 
-        // [ LEGEND ]
-        VeHop(px, 24, pw, 5, 10);
-        SetMau(10); ToaDoUI(px+2, 25); cout << char(219) << char(219);
-        SetMau(8);  ToaDoUI(px+5, 25); cout << "Ran";
-        SetMau(12); ToaDoUI(px+2, 26); cout << char(219) << char(219);
-        SetMau(8);  ToaDoUI(px+5, 26); cout << "Moi thuong";
-        SetMau(14); ToaDoUI(px+2, 27); cout << char(219) << char(219);
-        SetMau(8);  ToaDoUI(px+5, 27); cout << "Moi d.biet";
-        SetMau(11); ToaDoUI(px+2, 28); cout << char(219) << char(219);
-        SetMau(8);  ToaDoUI(px+5, 28); cout << "Chuong ngai";
+        VeHop(px, 24, pw, 4, 10);
+        SetMau(8); ToaDoUI(px+2, 25); cout << "LEGEND";
+
+        SetMau(10); ToaDoUI(px+2,  26); cout << char(219) << char(219);
+        SetMau(8);  ToaDoUI(px+5,  26); cout << "Ran";
+        SetMau(14); ToaDoUI(px+11, 26); cout << char(219) << char(219);
+        SetMau(8);  ToaDoUI(px+14, 26); cout << "Dac biet";
+
+        SetMau(11); ToaDoUI(px+2, 27); cout << char(219) << char(219);
+        SetMau(8);  ToaDoUI(px+5, 27); cout << "Chuong ngai";
 
         SetMau(15);
     }
 
-    // Cập nhật SCORE + BEST động
     static void CapNhatScore(int score, int best) {
         int px = UI_LEFT - 2;
         SetMau(10); ToaDoUI(px+2, 2); cout << score << "        ";
@@ -125,7 +111,6 @@ public:
         SetMau(15);
     }
 
-    // Cập nhật vị trí + thanh timer mồi thường
     static void CapNhatMoiThuong(Point vitri, float phanTramConLai) {
         int px   = UI_LEFT - 2;
         int barW = UI_W - 2;
@@ -142,7 +127,6 @@ public:
         SetMau(15);
     }
 
-    // Xoá panel mồi thường khi không có mồi
     static void XoaMoiThuongPanel() {
         int px   = UI_LEFT - 2;
         int barW = UI_W - 2;
@@ -152,7 +136,6 @@ public:
         for (int i = 0; i < barW; i++) cout << " ";
     }
 
-    // Cập nhật lịch sử điểm (hiện 2 lượt gần nhất)
     static void CapNhatLichSu() {
         int px  = UI_LEFT - 2;
         int row = 15;
@@ -172,8 +155,6 @@ public:
 // ==========================================
 class DieuKhien {
 public:
-    // Trả về hướng mới, chặn quay 180 độ
-    // Hướng: 0=Phải, 1=Xuống, 2=Trái, 3=Lên
     static int NhanPhim(int huongHienTai, int huongThucTe) {
         if (!kbhit()) return huongHienTai;
         char t = getch();
