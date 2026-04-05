@@ -1,0 +1,342 @@
+#include <iostream>
+#include <windows.h>
+#include <cstdlib>
+#include <conio.h>
+#include <vector>
+#include <ctime>
+#include <algorithm> 
+
+using namespace std;
+
+#define MAP_WIDTH 40
+#define MAP_HEIGHT 20
+
+float tocDo = 150.0;
+int diem = 0;
+
+void gotoxy(int column, int line) {
+    COORD coord = {(SHORT)column, (SHORT)line};
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
+
+struct Point {
+    int x, y;
+};
+
+class CONRAN {
+public:
+    struct Point A[100]; 
+    int DoDai;
+    Point tail_old;     
+
+    CONRAN() {
+        DoDai = 3;
+        A[0].x = 10; A[0].y = 10;
+        A[1].x = 11; A[1].y = 10;
+        A[2].x = 12; A[2].y = 10;
+    }
+
+    void Ve() {
+        for (int i = 0; i < DoDai; i++) {
+            gotoxy(A[i].x, A[i].y);
+            cout << "X";
+        }
+    }
+
+    void XoaDuoi() {
+        gotoxy(tail_old.x, tail_old.y);
+        cout << " ";
+    }
+
+    void DiChuyen(int Huong, const vector<Point> &tuong) {
+        tail_old = A[DoDai - 1];
+
+        Point dauMoi = A[0];
+        if (Huong == 0) dauMoi.x++;
+        if (Huong == 1) dauMoi.y++;
+        if (Huong == 2) dauMoi.x--;
+        if (Huong == 3) dauMoi.y--;
+
+        if (dauMoi.x >= MAP_WIDTH) dauMoi.x = 0;
+        else if (dauMoi.x < 0) dauMoi.x = MAP_WIDTH - 1;
+        if (dauMoi.y >= MAP_HEIGHT) dauMoi.y = 0;
+        else if (dauMoi.y < 0) dauMoi.y = MAP_HEIGHT - 1;
+
+        for (int i = 0; i < (int)tuong.size(); i++) {
+            if (dauMoi.x == tuong[i].x && dauMoi.y == tuong[i].y) return;
+        }
+
+        for (int i = DoDai - 1; i > 0; i--) {
+            A[i] = A[i - 1];
+        }
+        A[0] = dauMoi;
+    }
+};
+HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+void setMau(int mau) { SetConsoleTextAttribute(hConsole, mau); }
+void resetMau()      { SetConsoleTextAttribute(hConsole, 7);   }
+
+vector<Point> ToaDoChuongNgaiVatL() {
+    vector<Point> tuong;
+    for (int i = 15; i <= 25; i++) {
+        Point p1 = {i, 9};  tuong.push_back(p1);
+        Point p2 = {i, 11}; tuong.push_back(p2);
+    }
+    return tuong;
+}
+
+struct ConMoi {
+    Point vitri;
+    clock_t TimeXuathien;
+    bool ChuaBiAn;
+};
+
+class QuanLyGame {
+public:
+    ConMoi moiThuong, moiDB;
+    QuanLyGame() { moiThuong.ChuaBiAn = false; moiDB.ChuaBiAn = false; }
+
+    void xuatHienMoiThuong(CONRAN &r) {
+        bool hopLe;
+        do {
+            hopLe = true;
+            moiThuong.vitri.x = rand() % MAP_WIDTH;
+            moiThuong.vitri.y = rand() % MAP_HEIGHT;
+            for (int i = 0; i < r.DoDai; i++) {
+                if (moiThuong.vitri.x == r.A[i].x && moiThuong.vitri.y == r.A[i].y) {
+                    hopLe = false; break;
+                }
+            }
+        } while (!hopLe);
+        moiThuong.ChuaBiAn = true;
+        gotoxy(moiThuong.vitri.x, moiThuong.vitri.y); cout << "P";
+    }
+
+    void xuatHienMoiDB() {
+        moiDB.vitri = {20, 10};
+        moiDB.ChuaBiAn = true;
+    }
+
+    void Ve_MoiDB_ChuongNgaiVat_L() {
+        if (moiDB.ChuaBiAn) {
+            setMau(13);
+            gotoxy(20, 10); cout << "$";
+            resetMau();
+            vector<Point> tuong = ToaDoChuongNgaiVatL();
+            setMau(11);
+            for (int i = 0; i < (int)tuong.size(); i++) {
+                gotoxy(tuong[i].x, tuong[i].y); cout << "*";
+            }
+            resetMau();
+        }
+    }
+
+    void XoaTuongL() {
+        vector<Point> tuong = ToaDoChuongNgaiVatL();
+        for (int i = 0; i < (int)tuong.size(); i++) {
+            gotoxy(tuong[i].x, tuong[i].y); cout << " ";
+        }
+        gotoxy(20, 10); cout << " ";
+        moiDB.ChuaBiAn = false;
+    }
+
+    bool KiemTraThua(CONRAN &r) {
+        for (int i = 1; i < r.DoDai; i++) {
+            if (r.A[0].x == r.A[i].x && r.A[0].y == r.A[i].y) return true;
+        }
+        return false;
+    }
+
+    void tinhdiem(CONRAN &r) {
+        if (r.A[0].x == moiThuong.vitri.x && r.A[0].y == moiThuong.vitri.y) {
+            diem++;
+            if (r.DoDai < 100) r.DoDai++; 
+            xuatHienMoiThuong(r);
+            if (diem % 5 == 0) xuatHienMoiDB();
+        }
+        if (moiDB.ChuaBiAn && r.A[0].x == 20 && r.A[0].y == 10) {
+            diem += 5;
+            r.DoDai = (r.DoDai + 3 < 100) ? r.DoDai + 3 : 99;
+            XoaTuongL();
+        }
+    }
+};
+
+enum LoaiMoiHiem { KEO, CHAM, NHANH, NONE };
+
+struct MoiHiem {
+    Point vitri;
+    LoaiMoiHiem loai = NONE;
+    clock_t thoiDiemSpawn = 0;
+    clock_t thoiDiemBienMat = 0;
+    bool dangTonTai = false;
+    bool dangChoHoi = false;
+    bool daXuatHienDotNay = false;
+};
+
+class HeThongMoiChucNang {
+private:
+    MoiHiem mNhanhCham, mKeo;
+    bool dangNhanh = false;
+    bool dangCham = false;
+    string thongBao ;
+
+    bool LaViTriAnToan(int x, int y, CONRAN &r, const vector<Point> &tuong, Point mThuong, bool coMoiDB) {
+        
+        for (int i = 0; i < r.DoDai; i++) if (x == r.A[i].x && y == r.A[i].y) return false;
+        
+        if (x == mThuong.x && y == mThuong.y) return false;
+        
+        for (size_t i = 0; i < tuong.size(); i++) if (x == tuong[i].x && y == tuong[i].y) return false;
+        
+        if (coMoiDB && x == 20 && y == 10) return false;
+        
+        return true;
+    }
+
+    void SpawnNhanhCham(CONRAN &r, const vector<Point> &tuong, Point mThuong, bool coMoiDB) {
+        do {
+            mNhanhCham.vitri.x = rand() % MAP_WIDTH;
+            mNhanhCham.vitri.y = rand() % MAP_HEIGHT;
+        } while (!LaViTriAnToan(mNhanhCham.vitri.x, mNhanhCham.vitri.y, r, tuong, mThuong, coMoiDB));
+        
+        mNhanhCham.loai = (rand() % 2 == 0) ? NHANH : CHAM;
+        mNhanhCham.dangTonTai = true;
+        mNhanhCham.dangChoHoi = false;
+        mNhanhCham.thoiDiemSpawn = clock();
+        
+        gotoxy(mNhanhCham.vitri.x, mNhanhCham.vitri.y);
+        
+        cout << (mNhanhCham.loai == NHANH ? "F" : "S");
+        thongBao = (mNhanhCham.loai == NHANH) ? "MOI NHANH(F): Tang toc! An S de giai." : "MOI CHAM(S): Giam toc! An F de giai.";
+    }
+
+    void SpawnKeo(CONRAN &r, const vector<Point> &tuong, Point mThuong, bool coMoiDB) {
+        do {
+            mKeo.vitri.x = rand() % MAP_WIDTH;
+            mKeo.vitri.y = rand() % MAP_HEIGHT;
+        } while (!LaViTriAnToan(mKeo.vitri.x, mKeo.vitri.y, r, tuong, mThuong, coMoiDB));
+        
+        mKeo.loai = KEO;
+        mKeo.dangTonTai = true;
+        mKeo.daXuatHienDotNay = true;
+        mKeo.thoiDiemSpawn = clock();
+        
+        gotoxy(mKeo.vitri.x, mKeo.vitri.y); cout << "K";
+        thongBao = "MOI KEO(K): giam do dai, tru Diem!";
+    }
+
+public:
+    void CapNhatThoiGian(CONRAN &r, const vector<Point> &tuong, Point mThuong, bool coMoiDB) {
+        clock_t hienTai = clock();
+
+        
+        if (mNhanhCham.dangTonTai) {
+            if (hienTai - mNhanhCham.thoiDiemSpawn > 10000) {
+                gotoxy(mNhanhCham.vitri.x, mNhanhCham.vitri.y); cout << " "; 
+                mNhanhCham.dangTonTai = false;
+                mNhanhCham.dangChoHoi = true;
+                mNhanhCham.thoiDiemBienMat = hienTai;
+            }
+        } else if (mNhanhCham.dangChoHoi) {
+            if (hienTai - mNhanhCham.thoiDiemBienMat > 5000) mNhanhCham.dangChoHoi = false;
+        } else {
+            SpawnNhanhCham(r, tuong, mThuong, coMoiDB);
+        }
+
+        
+        if (coMoiDB) {
+            if (!mKeo.dangTonTai && !mKeo.daXuatHienDotNay) SpawnKeo(r, tuong, mThuong, coMoiDB);
+            if (mKeo.dangTonTai && hienTai - mKeo.thoiDiemSpawn > 10000) { 
+                gotoxy(mKeo.vitri.x, mKeo.vitri.y); cout << " ";
+                mKeo.dangTonTai = false;
+            }
+        } else {
+            if (mKeo.dangTonTai) {
+                gotoxy(mKeo.vitri.x, mKeo.vitri.y); cout << " ";
+                mKeo.dangTonTai = false;
+            }
+            mKeo.daXuatHienDotNay = false; 
+        }
+    }
+
+    void KiemTraVaCham(CONRAN &r, int &diem_ref) {
+        
+        if (mNhanhCham.dangTonTai && r.A[0].x == mNhanhCham.vitri.x && r.A[0].y == mNhanhCham.vitri.y) {
+            if (mNhanhCham.loai == NHANH) {
+                if (dangCham) { dangCham = false; thongBao = "DA HOA GIAI TOC DO CHAM!"; }
+                else { dangNhanh = true; thongBao = "DANG CHAY NHANH!"; }
+            } else {
+                if (dangNhanh) { dangNhanh = false; thongBao = "DA HOA GIAI TOC DO NHANH!"; }
+                else { dangCham = true; thongBao = "DANG CHAY CHAM!"; }
+            }
+            mNhanhCham.dangTonTai = false;
+            mNhanhCham.dangChoHoi = true; 
+            mNhanhCham.thoiDiemBienMat = clock();
+        }
+
+        
+        if (mKeo.dangTonTai && r.A[0].x == mKeo.vitri.x && r.A[0].y == mKeo.vitri.y) {
+            r.DoDai = max(3, (int)(r.DoDai * 0.7)); 
+            diem_ref = max(0, diem_ref - 5);                
+            mKeo.dangTonTai = false;
+            thongBao = "DA CAT DUOI! Bị ru 5 diem.";
+        }
+    }
+
+    int LayTocDoHienTai(float tocDoGoc) {
+        if (dangNhanh) return (int)(tocDoGoc / 2);
+        if (dangCham) return (int)(tocDoGoc * 2);
+        return (int)tocDoGoc;
+    }
+
+    void HienThiThongBao() {
+        gotoxy(0, MAP_HEIGHT + 2);
+        cout << "Thong bao: " << thongBao << "                                      "; 
+    }
+};
+
+int main() {
+    srand((unsigned int)time(NULL));
+    CONSOLE_CURSOR_INFO ci = {100, FALSE};
+    SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &ci);
+
+    CONRAN r;
+    QuanLyGame ql;
+    HeThongMoiChucNang htMoi; 
+    int Huong = 2; 
+    ql.xuatHienMoiThuong(r);
+
+    while (true) {
+        if (kbhit()) {
+            char t = getch();
+            if ((t == 'a' || t == 75) && Huong != 0) Huong = 2;
+            else if ((t == 'd' || t == 77) && Huong != 2) Huong = 0;
+            else if ((t == 'w' || t == 72) && Huong != 1) Huong = 3;
+            else if ((t == 's' || t == 80) && Huong != 3) Huong = 1;
+        }
+
+        r.XoaDuoi();
+        vector<Point> tuongHienTai = ql.moiDB.ChuaBiAn ? ToaDoChuongNgaiVatL() : vector<Point>();
+        r.DiChuyen(Huong, tuongHienTai);
+
+        if (ql.KiemTraThua(r)) break;
+
+        ql.tinhdiem(r);
+        ql.Ve_MoiDB_ChuongNgaiVat_L();
+
+        
+        htMoi.CapNhatThoiGian(r, tuongHienTai, ql.moiThuong.vitri, ql.moiDB.ChuaBiAn);
+        htMoi.KiemTraVaCham(r, diem);
+        htMoi.HienThiThongBao();
+        r.Ve();
+
+        gotoxy(0, MAP_HEIGHT + 1);
+        cout << "Diem: " << diem << "  ";
+
+        
+        Sleep(htMoi.LayTocDoHienTai(tocDo));
+    }
+    
+    return 0;
+}

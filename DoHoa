@@ -1,0 +1,187 @@
+#pragma once
+#include <iostream>
+#include <windows.h>
+#include <vector>
+#include <deque>
+
+using namespace std;
+
+// ==========================================
+// CONSTANTS — dùng chung toàn project
+// ==========================================
+#define MAP_WIDTH  40
+#define MAP_HEIGHT 20
+#define UI_LEFT    (MAP_WIDTH*2 + 4 + 2)
+#define UI_W       21
+
+// Khai báo extern — các biến này được định nghĩa trong main.cpp
+extern int diem;
+extern int bestScore;
+
+struct Point { int x, y; };
+
+struct LichSuEntry { int thu; int diem; };
+extern deque<LichSuEntry> lichSu;
+
+// ==========================================
+// MODULE: ĐỒ HOẠ
+// ==========================================
+class DoHoa {
+public:
+    static void KhoiTaoCuaSo() {
+        HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+        CONSOLE_CURSOR_INFO ci; ci.dwSize = 100; ci.bVisible = FALSE;
+        SetConsoleCursorInfo(h, &ci);
+        system("mode con cols=115 lines=27");
+    }
+
+    // Bảng màu:
+    // 8=DarkGray, 10=Green, 11=LightCyan, 12=Red, 14=Yellow, 15=White
+    static void SetMau(int mau) {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), mau);
+    }
+
+    // Tọa độ ô LOGIC → cột màn hình = x*2+2, hàng = y+2
+    static void ToaDo(int x, int y) {
+        COORD c = { (SHORT)(x * 2 + 2), (SHORT)(y + 2) };
+        SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), c);
+    }
+
+    // Tọa độ TUYỆT ĐỐI (dùng cho UI panel)
+    static void ToaDoUI(int x, int y) {
+        COORD c = { (SHORT)x, (SHORT)y };
+        SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), c);
+    }
+
+    // Vẽ hộp viền double-line
+    static void VeHop(int x, int y, int w, int h, int mau) {
+        SetMau(mau);
+        ToaDoUI(x, y);          cout << char(201);
+        ToaDoUI(x+w+1, y);      cout << char(187);
+        ToaDoUI(x, y+h+1);      cout << char(200);
+        ToaDoUI(x+w+1, y+h+1);  cout << char(188);
+        for (int i = 1; i <= w; i++) {
+            ToaDoUI(x+i, y);     cout << char(205);
+            ToaDoUI(x+i, y+h+1); cout << char(205);
+        }
+        for (int i = 1; i <= h; i++) {
+            ToaDoUI(x,     y+i); cout << char(186);
+            ToaDoUI(x+w+1, y+i); cout << char(186);
+        }
+    }
+
+    // Vẽ toàn bộ khung tĩnh (chỉ gọi 1 lần khi bắt đầu/restart)
+    static void VeKhungTinh() {
+        // Khung game
+        VeHop(0, 0, MAP_WIDTH * 2 + 2, MAP_HEIGHT + 2, 10);
+
+        int px = UI_LEFT - 2;
+        int pw = UI_W + 1;
+
+        // [ SCORE ]
+        VeHop(px, 0, pw, 3, 10);
+        SetMau(8); ToaDoUI(px+2, 1); cout << "SCORE";
+
+        // [ BEST ]
+        VeHop(px, 4, pw, 3, 10);
+        SetMau(8); ToaDoUI(px+2, 5); cout << "BEST";
+
+        // [ MOI THUONG ]
+        VeHop(px, 8, pw, 4, 10);
+        SetMau(8); ToaDoUI(px+2, 9); cout << "MOI THUONG";
+
+        // [ LICH SU ]
+        VeHop(px, 13, pw, 4, 10);
+        SetMau(8); ToaDoUI(px+2, 14); cout << "LICH SU";
+
+        // [ CONTROLS ]
+        VeHop(px, 18, pw, 5, 10);
+        SetMau(11); ToaDoUI(px+2, 19); cout << "CONTROLS";
+        SetMau(8);
+        ToaDoUI(px+2, 20); cout << "W/^ : Len";
+        ToaDoUI(px+2, 21); cout << "S/v : Xuong";
+        ToaDoUI(px+2, 22); cout << "A/< : Trai";
+        ToaDoUI(px+2, 23); cout << "D/> : Phai";
+
+        // [ LEGEND ]
+        VeHop(px, 24, pw, 5, 10);
+        SetMau(10); ToaDoUI(px+2, 25); cout << char(219) << char(219);
+        SetMau(8);  ToaDoUI(px+5, 25); cout << "Ran";
+        SetMau(12); ToaDoUI(px+2, 26); cout << char(219) << char(219);
+        SetMau(8);  ToaDoUI(px+5, 26); cout << "Moi thuong";
+        SetMau(14); ToaDoUI(px+2, 27); cout << char(219) << char(219);
+        SetMau(8);  ToaDoUI(px+5, 27); cout << "Moi d.biet";
+        SetMau(11); ToaDoUI(px+2, 28); cout << char(219) << char(219);
+        SetMau(8);  ToaDoUI(px+5, 28); cout << "Chuong ngai";
+
+        SetMau(15);
+    }
+
+    // Cập nhật SCORE + BEST động
+    static void CapNhatScore(int score, int best) {
+        int px = UI_LEFT - 2;
+        SetMau(10); ToaDoUI(px+2, 2); cout << score << "        ";
+        SetMau(14); ToaDoUI(px+2, 6); cout << best  << "        ";
+        SetMau(15);
+    }
+
+    // Cập nhật vị trí + thanh timer mồi thường
+    static void CapNhatMoiThuong(Point vitri, float phanTramConLai) {
+        int px   = UI_LEFT - 2;
+        int barW = UI_W - 2;
+
+        SetMau(12); ToaDoUI(px+2, 10);
+        cout << "(" << vitri.x << "," << vitri.y << ")      ";
+
+        int filled = (int)(phanTramConLai * barW);
+        ToaDoUI(px+2, 11);
+        SetMau(12);
+        for (int i = 0; i < filled; i++) cout << char(196);
+        SetMau(8);
+        for (int i = filled; i < barW; i++) cout << char(196);
+        SetMau(15);
+    }
+
+    // Xoá panel mồi thường khi không có mồi
+    static void XoaMoiThuongPanel() {
+        int px   = UI_LEFT - 2;
+        int barW = UI_W - 2;
+        ToaDoUI(px+2, 10);
+        for (int i = 0; i < barW+2; i++) cout << " ";
+        ToaDoUI(px+2, 11);
+        for (int i = 0; i < barW; i++) cout << " ";
+    }
+
+    // Cập nhật lịch sử điểm (hiện 2 lượt gần nhất)
+    static void CapNhatLichSu() {
+        int px  = UI_LEFT - 2;
+        int row = 15;
+        for (int i = 0; i < (int)lichSu.size() && i < 2; i++) {
+            SetMau(8);  ToaDoUI(px+2,    row+i); cout << "#" << lichSu[i].thu;
+            SetMau(10); ToaDoUI(px+2+12, row+i); cout << lichSu[i].diem << "   ";
+        }
+        for (int i = (int)lichSu.size(); i < 2; i++) {
+            ToaDoUI(px+2, row+i); cout << "                   ";
+        }
+        SetMau(15);
+    }
+};
+
+// ==========================================
+// MODULE: ĐIỀU KHIỂN
+// ==========================================
+class DieuKhien {
+public:
+    // Trả về hướng mới, chặn quay 180 độ
+    // Hướng: 0=Phải, 1=Xuống, 2=Trái, 3=Lên
+    static int NhanPhim(int huongHienTai, int huongThucTe) {
+        if (!kbhit()) return huongHienTai;
+        char t = getch();
+        if (t == 0 || t == (char)224) t = getch(); // 2 byte cho phím mũi tên
+        if ((t == 'a' || t == 75)  && huongThucTe != 0) return 2;
+        if ((t == 'd' || t == 77)  && huongThucTe != 2) return 0;
+        if ((t == 'w' || t == 72)  && huongThucTe != 1) return 3;
+        if ((t == 's' || t == 80)  && huongThucTe != 3) return 1;
+        return huongHienTai;
+    }
+};

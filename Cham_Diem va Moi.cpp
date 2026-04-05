@@ -4,21 +4,26 @@
 #include <conio.h>
 #include <vector>
 #include <ctime>
+
 #include <algorithm> 
+
 
 using namespace std;
 
 #define MAP_WIDTH 40
 #define MAP_HEIGHT 20
 
+
 float tocDo = 150.0f;
 int diem = 0;
 int bestScore = 0;
+
 
 void gotoxy(int column, int line) {
     COORD coord = {(SHORT)column, (SHORT)line};
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
+
 
 struct Point { int x, y; };
 
@@ -27,10 +32,12 @@ struct ConMoi {
     clock_t timeXuatHien;
     bool conHieuLuc;
     int thoiGianTon; // Thời gian tồn tại (giây)
+
 };
 
 class CONRAN {
 public:
+
     vector<Point> A;
     Point tail_old;
 
@@ -42,6 +49,7 @@ public:
 
     void Ve() {
         for (int i = 0; i < (int)A.size(); i++) {
+
             gotoxy(A[i].x, A[i].y);
             cout << "X";
         }
@@ -52,6 +60,7 @@ public:
         cout << " ";
     }
 
+
     void DiChuyen(int Huong, const vector<Point> &tuong) {
         tail_old = A.back();
         Point dauMoi = A[0];
@@ -61,28 +70,34 @@ public:
         else if (Huong == 2) dauMoi.x--;
         else if (Huong == 3) dauMoi.y--;
 
+
         if (dauMoi.x >= MAP_WIDTH) dauMoi.x = 0;
         else if (dauMoi.x < 0) dauMoi.x = MAP_WIDTH - 1;
         if (dauMoi.y >= MAP_HEIGHT) dauMoi.y = 0;
         else if (dauMoi.y < 0) dauMoi.y = MAP_HEIGHT - 1;
+
 
         for (auto &p : tuong) {
             if (dauMoi.x == p.x && dauMoi.y == p.y) return;
         }
 
         for (int i = (int)A.size() - 1; i > 0; i--) A[i] = A[i - 1];
+
         A[0] = dauMoi;
     }
 };
+
 
 vector<Point> ToaDoChuongNgaiVatL() {
     vector<Point> tuong;
     for (int i = 15; i <= 25; i++) {
         tuong.push_back({i, 9});
         tuong.push_back({i, 11});
+
     }
     return tuong;
 }
+
 
 class QuanLyGame {
 public:
@@ -95,12 +110,14 @@ public:
         moiDB.thoiGianTon = 10;    // Mồi đặc biệt tồn tại 10s
     }
 
+
     void xuatHienMoiThuong(CONRAN &r) {
         bool hopLe;
         do {
             hopLe = true;
             moiThuong.vitri.x = rand() % MAP_WIDTH;
             moiThuong.vitri.y = rand() % MAP_HEIGHT;
+
             for (auto &p : r.A) {
                 if (moiThuong.vitri.x == p.x && moiThuong.vitri.y == p.y) {
                     hopLe = false; break;
@@ -113,11 +130,13 @@ public:
 
         moiThuong.conHieuLuc = true;
         moiThuong.timeXuatHien = clock();
+
         gotoxy(moiThuong.vitri.x, moiThuong.vitri.y); cout << "P";
     }
 
     void xuatHienMoiDB() {
         moiDB.vitri = {20, 10};
+
         moiDB.conHieuLuc = true;
         moiDB.timeXuatHien = clock();
         
@@ -125,10 +144,12 @@ public:
         vector<Point> tuong = ToaDoChuongNgaiVatL();
         for (auto &p : tuong) { gotoxy(p.x, p.y); cout << "*"; }
         gotoxy(moiDB.vitri.x, moiDB.vitri.y); cout << "$";
+
     }
 
     void XoaTuongL() {
         vector<Point> tuong = ToaDoChuongNgaiVatL();
+
         for (auto &p : tuong) { gotoxy(p.x, p.y); cout << " "; }
         gotoxy(20, 10); cout << " ";
         moiDB.conHieuLuc = false;
@@ -171,6 +192,7 @@ public:
         }
         return false;
     }
+
 };
 
 int main() {
@@ -193,12 +215,15 @@ int main() {
         }
 
         r.XoaDuoi();
+
         vector<Point> tuongHienTai = ql.moiDB.conHieuLuc ? ToaDoChuongNgaiVatL() : vector<Point>();
+
         r.DiChuyen(Huong, tuongHienTai);
 
         if (ql.KiemTraThua(r)) break;
 
         ql.tinhdiem(r);
+
         ql.KiemTraTimeout(r);
         r.Ve();
 
@@ -212,3 +237,4 @@ int main() {
     cout << "GAME OVER! Diem: " << diem << " | Ky luc: " << bestScore << endl;
     return 0;
 }
+
